@@ -33,6 +33,10 @@ class GotoWindowCommand(sublime_plugin.WindowCommand):
             self._osx_focus()
         elif sublime.platform() == 'linux':
             self._linux_focus(window_to_move_to)
+        
+        # Currently only supported is windows
+        if sublime.platform() == "windows":
+            self._windows_move_to_center(window_to_move_to)
 
     def focus(self, window_to_move_to):
         active_view = window_to_move_to.active_view()
@@ -95,7 +99,24 @@ class GotoWindowCommand(sublime_plugin.WindowCommand):
             msg = "`wmctrl` is required by GotoWindow but was not found on " \
                   "your system. Please install it and try again."
             sublime.error_message(msg)
+    
+    # This deffinetelly has to be aligned to user preference (position and size)
+    # `cmdow.exe "*window_title*" /P` can be used to quickly scan current window setting 
+    # so it's easy to change that
+    def _windows_move_to_center(self, window_to_move_to):
+        window_variables = window_to_move_to.extract_variables()
 
+        if 'project_base_name' in window_variables:
+            window_title = window_variables['project_base_name']
+        elif 'folder' in window_variables:
+            window_title = os.path.basename(window_variables['folder'])
+
+        try:
+            Popen(["cmdow.exe", "*%s*" % window_title, "/MOV", "-8", "32", "/MAX", "/SIZ", "1936", "1176", "/ACT", "/VIS"])
+        except Exception as e:
+            msg = "`cmdow.exe` is required by GotoWindow but was not found on " \
+                              "your system. Please install it and try again. %s" % e
+            sublime.error_message(msg)
 
     def _get_current_index(self):
         active_window = sublime.active_window()
